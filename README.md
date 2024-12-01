@@ -11,4 +11,4 @@ Student Info
 
 * Student Name: Trần Anh Đức  
 * Student ID: Ba12-051
-* Student Group ID: Not-for-now
+* Student Group ID: 11
