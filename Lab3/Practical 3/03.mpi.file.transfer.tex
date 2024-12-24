@@ -1,0 +1,109 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{fontspec} % For custom fonts
+\usepackage{listings}
+
+% Set Arial as the default font
+\setmainfont{Arial}
+
+\title{Lab 3 - MPI File Transfer}
+\author{BA12-051 - Tran Anh Duc}
+
+\begin{document}
+
+\maketitle
+
+\section{Protocol}
+The server and client exchange information using the MPI (Message Passing Interface) communication standard. The protocol includes these steps:
+\begin{itemize}
+    \item The client reads the file content and sends it to the server using an MPI message.
+    \item The server receives the file content and stores it in a specified location.
+    \item Once the transfer is complete, the server sends an acknowledgment to the client.
+\end{itemize}
+
+\section{System Architecture}
+The system consists of two entities — the client and the server — implemented as MPI processes. The client and server communicate through MPI messages:
+\begin{itemize}
+    \item \textbf{Client (Rank 1)}: Reads the file and sends the file data to the server.
+    \item \textbf{Server (Rank 0)}: Receives the file data and writes it to a local file.
+\end{itemize}
+MPI enables efficient communication between the client and server processes.
+
+\section{File Transfer}
+The file transfer mechanism involves sending and receiving MPI messages containing file data. Below is the implementation for the server and client.
+
+\subsection{Server Code}
+The server receives the file data from the client using \texttt{MPI\_Recv} and writes it to a file. Here is the implementation:
+
+\begin{lstlisting}[language=Python]
+from mpi4py import MPI
+
+def start_server(file_name="received_file.txt"):
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    if rank == 0:  # Server role
+        print("Server waiting for file data...")
+        file_data = comm.recv(source=1, tag=11)  # Receive file data from client
+        print("File data received. Writing to file...")
+
+        with open(file_name, "wb") as file:
+            file.write(file_data)
+        
+        print(f"File '{file_name}' received successfully!")
+
+if __name__ == "__main__":
+    start_server()
+\end{lstlisting}
+
+\subsection{Client Code}
+The client reads the file content and sends it to the server using \texttt{MPI\_Send}. Here is the implementation:
+
+\begin{lstlisting}[language=Python]
+from mpi4py import MPI
+
+def send_file(file_path):
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    if rank == 1:  # Client role
+        print("Client reading file and sending data...")
+        try:
+            with open(file_path, "rb") as file:
+                file_data = file.read()
+
+            comm.send(file_data, dest=0, tag=11)  # Send file data to server
+            print("File sent successfully!")
+        except FileNotFoundError:
+            print(f"File '{file_path}' not found. Exiting.")
+
+if __name__ == "__main__":
+    send_file("transferfile.txt")
+\end{lstlisting}
+
+\section{Advantages of MPI Transfer}
+\begin{itemize}
+    \item \textbf{Scalability}: MPI supports distributed systems with multiple processes, making it ideal for larger networks.
+    \item \textbf{Efficiency}: Communication between processes is optimized for performance.
+    \item \textbf{Flexibility}: MPI allows custom communication patterns, such as point-to-point or collective communication.
+\end{itemize}
+
+\section{Comparison with TCP Socket Transfer}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Aspect} & \textbf{MPI Transfer} & \textbf{TCP Socket Transfer} \\
+\hline
+Ease of Implementation & Moderate & Simple \\
+\hline
+Scalability & High & Limited \\
+\hline
+Performance & High (Optimized for HPC) & Moderate \\
+\hline
+Cross-Platform Compatibility & High & High \\
+\hline
+\end{tabular}
+\caption{Comparison of MPI and TCP Socket Transfer}
+\end{table}
+
+\end{document}

@@ -1,0 +1,89 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{fontspec} % For custom fonts
+\usepackage{listings}
+
+% Set Arial as the default font
+\setmainfont{Arial}
+
+\title{Lab 2 - RPC File Transfer}
+\author{BA12-051 - Tran Anh Duc}
+
+\begin{document}
+
+\maketitle
+
+\section{Protocol}
+The server and client communicate using Remote Procedure Call (RPC). The protocol involves the following steps:
+\begin{itemize}
+    \item The client encodes the file it wants to send as a Base64 string.
+    \item The client invokes the server's exposed RPC method \texttt{receive\_file}, passing the encoded file and its name as parameters.
+    \item The server decodes the file content, saves it locally, and returns an acknowledgment to the client.
+\end{itemize}
+
+\section{System Architecture}
+The system is composed of two components: the client and the server. The client uses an RPC client library to communicate with the server, and the server uses an RPC server library to expose methods. The client sends a Base64-encoded file to the server, which decodes and stores the file. Once the transfer is complete, the server sends a success message to the client.
+
+\section{File Transfer}
+The file transfer mechanism relies on Base64 encoding for safe transmission over RPC. Here is the implementation of the file transfer on the client and server sides.
+
+\subsection{Server Code}
+The server defines an RPC method \texttt{receive\_file} to accept the file content and name, decode it, and save it locally. Below is the implementation:
+
+\begin{lstlisting}[language=Python]
+def receive_file(encoded_file, file_name):
+    try:
+        file_data = base64.b64decode(encoded_file)
+        with open(file_name, 'wb') as file:
+            file.write(file_data)
+        print(f"File '{file_name}' received and saved successfully.")
+        return "File received successfully"
+    except Exception as e:
+        print(f"Error receiving file: {e}")
+        return str(e)
+
+server = SimpleXMLRPCServer((host, port))
+server.register_function(receive_file, "receive_file")
+server.serve_forever()
+\end{lstlisting}
+
+\subsection{Client Code}
+The client encodes the file to Base64 format and sends it to the server using the RPC method \texttt{receive\_file}. Below is the implementation:
+
+\begin{lstlisting}[language=Python]
+with open(file_path, 'rb') as file:
+    file_data = file.read()
+encoded_file = base64.b64encode(file_data).decode('utf-8')
+
+server_url = f"http://{server_host}:{server_port}/"
+proxy = ServerProxy(server_url)
+response = proxy.receive_file(encoded_file, file_name)
+print(response)
+\end{lstlisting}
+
+\section{Advantages of RPC Transfer}
+\begin{itemize}
+    \item \textbf{Abstraction}: The RPC framework abstracts the details of socket programming.
+    \item \textbf{Ease of Use}: Simplifies client-server communication by exposing methods directly.
+    \item \textbf{Cross-Language Compatibility}: Many RPC frameworks support multiple languages.
+\end{itemize}
+
+\section{Comparison with TCP Socket Transfer}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Aspect} & \textbf{RPC Transfer} & \textbf{TCP Socket Transfer} \\
+\hline
+Ease of Implementation & High & Moderate \\
+\hline
+Error Handling & Built into the framework & Manual \\
+\hline
+Flexibility & Limited to method calls & High (raw data transfer) \\
+\hline
+Cross-Language Support & High & Requires custom implementation \\
+\hline
+\end{tabular}
+\caption{Comparison of RPC and TCP Socket Transfer}
+\end{table}
+
+\end{document}
